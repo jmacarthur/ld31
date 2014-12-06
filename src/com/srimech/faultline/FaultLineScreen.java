@@ -64,9 +64,10 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
     private final int SLIDE_RIGHT = 1;
     private final int SLIDE_DOWN = 2;
+    private final int SLIDE_LEFT = 3;
+    private final int SLIDE_UP = 4;
 
     Bitmap wallBitmap;
-
 
     private void setup() {
 	Resources r = this.getContext().getResources();
@@ -85,7 +86,6 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	cellContents[0][0] = PLAYER;
         loop = new GameThread(this);
         loop.start();
-
     }
     
     public FaultLineScreen(Context context) {
@@ -117,11 +117,39 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	}
 	cellContents[0][row] = temp;
     }
+    void rotateCellContentsLeft(int row) {
+	int temp = getCellContents(0, row);
+	for(int x=0;x<GSX-1;x++) {
+	    cellContents[x][row] = cellContents[x+1][row];
+	}
+	cellContents[GSX-1][row] = temp;
+    }   
+    void rotateCellContentsDown(int column) {
+	int temp = getCellContents(column, GSY-1);
+	for(int y=GSY-1;y>0;y--) {
+	    cellContents[column][y] = cellContents[column][y-1];
+	}
+	cellContents[column][0] = temp;
+    }
+    void rotateCellContentsUp(int column) {
+	int temp = getCellContents(column, 0);
+	for(int y=0;y<GSY-1;y++) {
+	    cellContents[column][y] = cellContents[column][y+1];
+	}
+	cellContents[column][GSY-1] = temp;
+    }
 
     void finishAnimation() {
 	// Move any contents
-	if(animationType == SLIDE_RIGHT) {
-	    rotateCellContentsRight(animatingRow);
+	switch(animationType) {
+	case SLIDE_RIGHT:
+	    rotateCellContentsRight(animatingRow); break;
+	case SLIDE_LEFT:
+	    rotateCellContentsLeft(animatingRow); break;
+	case SLIDE_UP:
+	    rotateCellContentsUp(animatingColumn); break;
+	case SLIDE_DOWN:
+	    rotateCellContentsDown(animatingColumn); break;
 	}
 	animationProgress = -1;
 	animatingRow = -1;
@@ -131,6 +159,9 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     }
 
     public boolean onTouch(View v, MotionEvent me) {
+	if (animationProgress != -1) {
+	    return true; // We don't care about any events when animating
+	}
 	if(me.getAction() == MotionEvent.ACTION_DOWN) {
 	    dragStartX = me.getX(0);
 	    dragStartY = me.getY(0);
@@ -139,31 +170,39 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    float dx = me.getX(0) - dragStartX;
 	    float dy = me.getY(0) - dragStartY;
 	    if(dx > 64 && Math.abs(dy)<32) {
-		startSlideRight((int) (dragStartY / 64));
+		startSlideRow((int) (dragStartY / 64), SLIDE_RIGHT);
 		return true;
 	    }
-	    if(dy > 64 && Math.abs(dx)<32) {
-		startSlideDown((int) (dragStartX / 64));
+	    if(dx < -64 && Math.abs(dy)<32) {
+		startSlideRow((int) (dragStartY / 64), SLIDE_LEFT);
+		return true;
+	    }
+	    else if(dy > 64 && Math.abs(dx)<32) {
+		startSlideCol((int) (dragStartX / 64), SLIDE_DOWN);
+		return true;
+	    }
+	    else if(dy < -64 && Math.abs(dx)<32) {
+		startSlideCol((int) (dragStartX / 64), SLIDE_UP);
 		return true;
 	    }
 	}
 	return true;
     }
 
-    public void startSlideRight(int row)
+    public void startSlideRow(int row, int type)
     {
 	animatingRow = row;
 	animationProgress = 0;
-	animationType = SLIDE_RIGHT;
+	animationType = type;
 	loop.setDelay(50);
 	loop.interrupt();	
     }
 
-    public void startSlideDown(int column)
+    public void startSlideCol(int column, int type)
     {
 	animatingColumn = column;
 	animationProgress = 0;
-	animationType = SLIDE_DOWN;
+	animationType = type;
 	loop.setDelay(50);
 	loop.interrupt();	
     }
@@ -193,9 +232,9 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	lightBluePaint.setColor(0xff7f7fff);
 	canvas.drawCircle((float)(width/2+x), (float)(height/2+y), 16, lightBluePaint);
 
-	for(int gx=0;gx<GSX;gx++) {
+	for(int gx=0; gx<GSX; gx++) {
 	    if(animatingColumn == gx) continue;
-	    for(int gy=0;gy<GSY;gy++) {
+	    for(int gy=0; gy<GSY; gy++) {
 		if(animatingRow == gy) continue;
 		drawTile(canvas, gx, gy, gx*64, gy*64);
 	    }
@@ -203,12 +242,14 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
 	if(animatingColumn >= 0) {
 	    for(int gy=-1;gy<GSY;gy++) {
-		drawTile(canvas, animatingColumn, gy, animatingColumn*64,gy*64+animationProgress);
+		int dir = animationType == SLIDE_DOWN?1:-1;
+		drawTile(canvas, animatingColumn, gy, animatingColumn*64,gy*64+animationProgress*dir);
 	    }
 	}
 	if(animatingRow >= 0) {
 	    for(int gx=-1;gx<GSX;gx++) {
-		drawTile(canvas, gx, animatingRow, gx*64+animationProgress,animatingRow*64);
+		int dir = animationType == SLIDE_RIGHT?1:-1;
+		drawTile(canvas, gx, animatingRow, gx*64+animationProgress*dir,animatingRow*64);
 	    }
 	}
     }
