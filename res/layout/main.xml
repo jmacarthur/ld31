@@ -9,5 +9,14 @@
     android:layout_height="wrap_content"
     android:text="Hello World, FaultLineActivity"
     />
+
+<com.srimech.faultline.FaultLineScreen
+    android:id="@+id/faultLineScreen1"
+    android:layout_width="wrap_content"
+    android:layout_height="fill_parent"
+    android:layout_alignParentLeft="true"
+    android:layout_below="@id/textView"
+    />
+
 </LinearLayout>
 
