@@ -61,6 +61,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private int cellContents[][];
     private int wallType[][];
     private final int PLAYER = 1;
+    private final int MEANIE = 2;
 
     private final int GSX = 5;
     private final int GSY = 7;
@@ -76,11 +77,14 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private int mode = SLIDE;    
     private int playerX = 0;
     private int playerY = 0;
+    private int meanieX = GSX-1;
+    private int meanieY = GSY-1;
     private int temp_astar_map[][] = null;
 
     private Path arrowPath;
 
     Bitmap wallBitmaps[];
+    Bitmap meanieBitmap;
 
     private Bitmap loadImage(int index)
     {
@@ -111,7 +115,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	wallBitmaps[13] = loadImage(R.drawable.brickwall_nsw);
 	wallBitmaps[14] = loadImage(R.drawable.brickwall_nse);
 	wallBitmaps[15] = loadImage(R.drawable.brickwall_nsew);
-
+	meanieBitmap = loadImage(R.drawable.meanie);
 	setOnTouchListener(this);
 	cellContents = new int[GSX][GSY];
 	wallType = new int[GSX][GSY];
@@ -125,6 +129,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    }
 	}
 	cellContents[0][0] = PLAYER;
+	cellContents[GSX-1][GSY-1] = MEANIE;
         loop = new GameThread(this);
         loop.start();
 
@@ -383,6 +388,20 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	}
 	return wallType[gx][gy];
     }
+    private void drawPlayer(Canvas canvas, int xpos, int ypos) {
+	Paint redPaint = new Paint();
+	redPaint.setColor(0xffff0000);
+	if (mode == MOVE) {
+	    Path offsetArrow = new Path();
+	    offsetArrow.addPath(arrowPath, xpos+32, ypos+32);
+	    canvas.drawPath(offsetArrow, redPaint);
+	} else {
+	    canvas.drawCircle(xpos+32, ypos+32, 16, redPaint);
+	}
+    }
+    private void drawMeanie(Canvas canvas, int xpos, int ypos) {
+	canvas.drawBitmap(meanieBitmap, null, new RectF(xpos,ypos,xpos+64,ypos+64), null);
+    }
 
     private void drawTile(Canvas canvas, int gx, int gy, int xpos, int ypos)
     {
@@ -395,14 +414,11 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	canvas.drawBitmap(wallBitmaps[t], null, new RectF(xpos,ypos,xpos+64,ypos+64), null);
 	int contents = getCellContents(gx,gy);
 	if(contents > 0) {
-	    Paint redPaint = new Paint();
-	    redPaint.setColor(0xffff0000);
-	    if (mode == MOVE) {
-		Path offsetArrow = new Path();
-		offsetArrow.addPath(arrowPath, xpos+32, ypos+32);
-		canvas.drawPath(offsetArrow, redPaint);
-	    } else {
-		canvas.drawCircle(xpos+32, ypos+32, 16, redPaint);
+	    if(contents == PLAYER) {
+		drawPlayer(canvas, xpos, ypos);
+	    }
+	    else if(contents == MEANIE) {
+		drawMeanie(canvas, xpos, ypos);
 	    }
 	}
     }
