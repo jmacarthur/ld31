@@ -1,4 +1,4 @@
-package com.millihertz.slidemaze;
+package com.srimech.faultline;
 
 import android.content.Context;
 import android.graphics.Canvas;
