@@ -69,6 +69,12 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private final int SLIDE_LEFT = 3;
     private final int SLIDE_UP = 4;
 
+    private final int SLIDE = 0;
+    private final int MOVE = 1;
+
+    private int mode = SLIDE;    
+    private int playerX = 0;
+    private int playerY = 0;
     Bitmap wallBitmaps[];
 
     private Bitmap loadImage(int index)
@@ -199,15 +205,38 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	animatingColumn = -1;
 	loop.setDelay(1000);
 	animationType = 0;
+	if(mode == SLIDE)
+	    mode = MOVE;
+	else
+	    mode = SLIDE;
+    }
+
+    private boolean canMove(int fromX, int fromY, int toX, int toY) {
+	return true;
+    }
+
+    private void startMove(int x, int y) {
+	if(canMove(playerX, playerY, x, y)) {
+	    cellContents[playerX][playerY] = 0;
+	    playerX = x;
+	    playerY = y;
+	    cellContents[playerX][playerY] = PLAYER;	    
+	}
     }
 
     public boolean onTouch(View v, MotionEvent me) {
 	if (animationProgress != -1) {
 	    return true; // We don't care about any events when animating
 	}
+
 	if(me.getAction() == MotionEvent.ACTION_DOWN) {
-	    dragStartX = me.getX(0);
-	    dragStartY = me.getY(0);
+	    if(mode==SLIDE) {
+		dragStartX = me.getX(0);
+		dragStartY = me.getY(0);
+	    }
+	    else if (mode==MOVE) {
+		startMove((int)(me.getX(0)/64),(int)(me.getY(0)/64));
+	    }
 	}
 	else if(me.getAction() == MotionEvent.ACTION_MOVE) {
 	    float dx = me.getX(0) - dragStartX;
