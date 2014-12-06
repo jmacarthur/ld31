@@ -256,12 +256,12 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    playerX = x;
 	    playerY = y;
 	    cellContents[playerX][playerY] = PLAYER;	    
+	    mode = SLIDE;
+	    loop.interrupt();
 	}
 	else {
 	    Log.i("FaultLine", "Move denied from "+playerX+","+playerY+" to "+x+","+y);
 	}
-	mode = SLIDE;
-	loop.interrupt();
     }
 
     public boolean onTouch(View v, MotionEvent me) {
@@ -279,7 +279,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 		startMove((int)(me.getX(0)/64),(int)(me.getY(0)/64));
 	    }
 	}
-	else if(me.getAction() == MotionEvent.ACTION_MOVE) {
+	else if(me.getAction() == MotionEvent.ACTION_MOVE && mode == SLIDE) {
 	    float dx = me.getX(0) - dragStartX;
 	    float dy = me.getY(0) - dragStartY;
 	    if(dx > 64 && Math.abs(dy)<32) {
