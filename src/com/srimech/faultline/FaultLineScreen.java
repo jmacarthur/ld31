@@ -129,9 +129,26 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
         loop.start();
 
 	arrowPath = new Path();
-	arrowPath.moveTo(0,0);
-	arrowPath.lineTo(32,32);
-	arrowPath.lineTo(64,0);
+	arrowPath.moveTo(16,-16);
+	arrowPath.lineTo(32,0);
+	arrowPath.lineTo(16,16);
+	arrowPath.lineTo(16,-16);
+
+	arrowPath.moveTo(16,16);
+	arrowPath.lineTo(0,32);
+	arrowPath.lineTo(-16,16);
+	arrowPath.lineTo(16,16);
+
+	arrowPath.moveTo(-16,16);
+	arrowPath.lineTo(-32,0);
+	arrowPath.lineTo(-16,-16);
+	arrowPath.lineTo(-16,16);
+
+	arrowPath.moveTo(-16,-16);
+	arrowPath.lineTo(0,-32);
+	arrowPath.lineTo(16,-16);
+	arrowPath.lineTo(-16,-16);
+
 	arrowPath.close();
     }
     
@@ -244,6 +261,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    Log.i("FaultLine", "Move denied from "+playerX+","+playerY+" to "+x+","+y);
 	}
 	mode = SLIDE;
+	loop.interrupt();
     }
 
     public boolean onTouch(View v, MotionEvent me) {
@@ -290,7 +308,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	animationProgress = 0;
 	animationType = type;
 	loop.setDelay(10);
-	loop.interrupt();	
+	loop.interrupt();
     }
 
     public void startSlideCol(int column, int type)
@@ -381,7 +399,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    redPaint.setColor(0xffff0000);
 	    if (mode == MOVE) {
 		Path offsetArrow = new Path();
-		offsetArrow.addPath(arrowPath, xpos, ypos);
+		offsetArrow.addPath(arrowPath, xpos+32, ypos+32);
 		canvas.drawPath(offsetArrow, redPaint);
 	    } else {
 		canvas.drawCircle(xpos+32, ypos+32, 16, redPaint);
