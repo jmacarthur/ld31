@@ -16,10 +16,14 @@ class GameThread extends Thread
 {
     private FaultLineScreen called;
     private boolean cont;
+    private int delay;
     public GameThread(FaultLineScreen called)
     {
         this.called = called;
         cont = true;
+    }
+    public void setDelay(int newDelay) {
+	delay = newDelay;
     }
     public void run()
     {
@@ -27,7 +31,7 @@ class GameThread extends Thread
             called.updateGameLoop();
             called.lockedDraw();
             try {
-                Thread.sleep(1000);
+                Thread.sleep(delay);
             } catch (InterruptedException e) {
                 // meh
             }
@@ -42,6 +46,10 @@ class GameThread extends Thread
 public class FaultLineScreen extends SurfaceView
 {
     private double d = 0;
+    private int animatingRow = -1;
+    private int animatingColumn = -1;
+    private int animationProgress = -1;
+    private GameThread loop;
     Bitmap wallBitmap;
 
     private void setup() {
@@ -52,8 +60,14 @@ public class FaultLineScreen extends SurfaceView
 	wall.setBounds(0, 0, 64, 64);
 	wall.draw(bitmapCanvas);
 
-        Thread loop = new GameThread(this);
+        loop = new GameThread(this);
         loop.start();
+
+	// To test animation
+	animatingRow = 2;
+	animationProgress = 0;
+	loop.interrupt();
+	loop.setDelay(100);
     }
     
     public FaultLineScreen(Context context) {
@@ -72,6 +86,11 @@ public class FaultLineScreen extends SurfaceView
 
     void updateGameLoop() {
 	d += 0.1;
+	if(animationProgress >= 0) animationProgress += 1;
+	if(animationProgress == 64) { 
+	    animationProgress = -1;
+	    loop.setDelay(1000);
+	}
     }
 
     public void onDraw(Canvas canvas) {
@@ -99,7 +118,24 @@ public class FaultLineScreen extends SurfaceView
 	lightBluePaint.setColor(0xff7f7fff);
 	canvas.drawCircle((float)(width/2+x), (float)(height/2+y), 16, lightBluePaint);
 
-	canvas.drawBitmap(wallBitmap, null, new RectF(0,0,64,64), null);
+	for(int gx=0;gx<4;gx++) {
+	    if(animatingColumn == gx) continue;
+	    for(int gy=0;gy<6;gy++) {
+		if(animatingRow == gy) continue;
+		canvas.drawBitmap(wallBitmap, null, new RectF(gx*64,gy*64,gx*64+64,gy*64+64), null);
+	    }
+	}
+
+	if(animatingColumn >= 0) {
+	    for(int gy=-1;gy<6;gy++) {
+		canvas.drawBitmap(wallBitmap, null, new RectF(animatingColumn*64,gy*64+animationProgress,animatingColumn*64+64,gy*64+64+animationProgress), null);
+	    }
+	}
+	if(animatingRow >= 0) {
+	    for(int gx=-1;gx<4;gx++) {
+		canvas.drawBitmap(wallBitmap, null, new RectF(gx*64+animationProgress,animatingRow*64,gx*64+64+animationProgress,animatingRow*64+64), null);
+	    }
+	}
     }
 
 }
