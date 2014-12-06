@@ -63,7 +63,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private final int PLAYER = 1;
 
     private final int GSX = 5;
-    private final int GSY = 8;
+    private final int GSY = 7;
 
     private final int SLIDE_RIGHT = 1;
     private final int SLIDE_DOWN = 2;
@@ -355,13 +355,13 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	}
 
 	if(animatingColumn >= 0) {
-	    for(int gy=-1;gy<GSY;gy++) {
+	    for(int gy=-1;gy<=GSY;gy++) {
 		int dir = animationType == SLIDE_DOWN?1:-1;
 		drawTile(canvas, animatingColumn, (gy+GSY)%GSY, animatingColumn*64,gy*64+animationProgress*dir);
 	    }
 	}
 	if(animatingRow >= 0) {
-	    for(int gx=-1;gx<GSX;gx++) {
+	    for(int gx=-1;gx<=GSX;gx++) {
 		int dir = animationType == SLIDE_RIGHT?1:-1;
 		drawTile(canvas, (gx+GSX)%GSX, animatingRow, gx*64+animationProgress*dir,animatingRow*64);
 	    }
