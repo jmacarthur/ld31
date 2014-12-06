@@ -55,7 +55,13 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private GameThread loop;
     private float dragStartX = 0;
     private float dragStartY = 0;
+    private int cellContents[][];
+    private final int PLAYER = 1;
+
+    private final int GSX = 5;
+    private final int GSY = 8;
     Bitmap wallBitmap;
+
 
     private void setup() {
 	Resources r = this.getContext().getResources();
@@ -65,6 +71,13 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	wall.setBounds(0, 0, 64, 64);
 	wall.draw(bitmapCanvas);
 	setOnTouchListener(this);
+	cellContents = new int[GSX][GSY];
+	for(int x=0;x<GSX;x++) {
+	    for(int y=0;y<GSY;y++) {
+		cellContents[x][y] = 0;
+	    }
+	}
+	cellContents[0][0] = PLAYER;
         loop = new GameThread(this);
         loop.start();
 
@@ -160,19 +173,38 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    if(animatingColumn == gx) continue;
 	    for(int gy=0;gy<6;gy++) {
 		if(animatingRow == gy) continue;
-		canvas.drawBitmap(wallBitmap, null, new RectF(gx*64,gy*64,gx*64+64,gy*64+64), null);
+		drawTile(canvas, gx, gy, gx*64, gy*64);
 	    }
 	}
 
 	if(animatingColumn >= 0) {
 	    for(int gy=-1;gy<6;gy++) {
-		canvas.drawBitmap(wallBitmap, null, new RectF(animatingColumn*64,gy*64+animationProgress,animatingColumn*64+64,gy*64+64+animationProgress), null);
+		drawTile(canvas, animatingColumn, gy, animatingColumn*64,gy*64+animationProgress);
 	    }
 	}
 	if(animatingRow >= 0) {
 	    for(int gx=-1;gx<4;gx++) {
-		canvas.drawBitmap(wallBitmap, null, new RectF(gx*64+animationProgress,animatingRow*64,gx*64+64+animationProgress,animatingRow*64+64), null);
+		drawTile(canvas, gx, animatingRow, gx*64+animationProgress,animatingRow*64);
 	    }
+	}
+    }
+
+    private int getCellContents(int gx, int gy)
+    {
+	if(gx<0 || gy<0 || gx>=GSX || gy>=GSY) {
+	    return 0;
+	}
+	return cellContents[gx][gy];
+    }
+
+    private void drawTile(Canvas canvas, int gx, int gy, int xpos, int ypos)
+    {
+	canvas.drawBitmap(wallBitmap, null, new RectF(xpos,ypos,xpos+64,ypos+64), null);
+	int contents = getCellContents(gx,gy);
+	if(contents > 0) {
+	    Paint redPaint = new Paint();
+	    redPaint.setColor(0xffff0000);
+	    canvas.drawCircle(xpos+32, ypos+32, 16, redPaint);
 	}
     }
 
