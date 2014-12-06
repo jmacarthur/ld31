@@ -15,6 +15,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.TextView;
 import java.util.Random;
 
 class GameThread extends Thread
@@ -80,7 +81,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private int meanieX = GSX-1;
     private int meanieY = GSY-1;
     private int temp_astar_map[][] = null;
-
+    private TextView status;
     private Path arrowPath;
 
     Bitmap wallBitmaps[];
@@ -115,6 +116,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	wallBitmaps[13] = loadImage(R.drawable.brickwall_nsw);
 	wallBitmaps[14] = loadImage(R.drawable.brickwall_nse);
 	wallBitmaps[15] = loadImage(R.drawable.brickwall_nsew);
+	Resources r = this.getContext().getResources();
+	status = (TextView) findViewById(R.id.textView);
 	meanieBitmap = loadImage(R.drawable.meanie);
 	setOnTouchListener(this);
 	cellContents = new int[GSX][GSY];
@@ -241,10 +244,11 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	animatingColumn = -1;
 	loop.setDelay(1000);
 	animationType = 0;
-	if(mode == SLIDE)
+	if(mode == SLIDE) {
 	    mode = MOVE;
-	else
+	} else {
 	    mode = SLIDE;
+	}
     }
 
     private boolean canMove(int fromX, int fromY, int toX, int toY) {
