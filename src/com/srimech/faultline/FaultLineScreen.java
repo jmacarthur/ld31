@@ -52,6 +52,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private int animatingRow = -1;
     private int animatingColumn = -1;
     private int animationProgress = -1;
+    private int animationType = 0;
     private GameThread loop;
     private float dragStartX = 0;
     private float dragStartY = 0;
@@ -60,6 +61,10 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
     private final int GSX = 5;
     private final int GSY = 8;
+
+    private final int SLIDE_RIGHT = 1;
+    private final int SLIDE_DOWN = 2;
+
     Bitmap wallBitmap;
 
 
@@ -101,11 +106,28 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	d += 0.1;
 	if(animationProgress >= 0) animationProgress += 1;
 	if(animationProgress == 64) { 
-	    animationProgress = -1;
-	    animatingRow = -1;
-	    animatingColumn = -1;
-	    loop.setDelay(1000);
+	    finishAnimation();
 	}
+    }
+
+    void rotateCellContentsRight(int row) {
+	int temp = getCellContents(GSX-1, row);
+	for(int x=GSX-1;x>0;x--) {
+	    cellContents[x][row] = cellContents[x-1][row];
+	}
+	cellContents[0][row] = temp;
+    }
+
+    void finishAnimation() {
+	// Move any contents
+	if(animationType == SLIDE_RIGHT) {
+	    rotateCellContentsRight(animatingRow);
+	}
+	animationProgress = -1;
+	animatingRow = -1;
+	animatingColumn = -1;
+	loop.setDelay(1000);
+	animationType = 0;
     }
 
     public boolean onTouch(View v, MotionEvent me) {
@@ -132,6 +154,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     {
 	animatingRow = row;
 	animationProgress = 0;
+	animationType = SLIDE_RIGHT;
 	loop.setDelay(50);
 	loop.interrupt();	
     }
@@ -140,6 +163,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     {
 	animatingColumn = column;
 	animationProgress = 0;
+	animationType = SLIDE_DOWN;
 	loop.setDelay(50);
 	loop.interrupt();	
     }
@@ -169,21 +193,21 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	lightBluePaint.setColor(0xff7f7fff);
 	canvas.drawCircle((float)(width/2+x), (float)(height/2+y), 16, lightBluePaint);
 
-	for(int gx=0;gx<4;gx++) {
+	for(int gx=0;gx<GSX;gx++) {
 	    if(animatingColumn == gx) continue;
-	    for(int gy=0;gy<6;gy++) {
+	    for(int gy=0;gy<GSY;gy++) {
 		if(animatingRow == gy) continue;
 		drawTile(canvas, gx, gy, gx*64, gy*64);
 	    }
 	}
 
 	if(animatingColumn >= 0) {
-	    for(int gy=-1;gy<6;gy++) {
+	    for(int gy=-1;gy<GSY;gy++) {
 		drawTile(canvas, animatingColumn, gy, animatingColumn*64,gy*64+animationProgress);
 	    }
 	}
 	if(animatingRow >= 0) {
-	    for(int gx=-1;gx<4;gx++) {
+	    for(int gx=-1;gx<GSX;gx++) {
 		drawTile(canvas, gx, animatingRow, gx*64+animationProgress,animatingRow*64);
 	    }
 	}
