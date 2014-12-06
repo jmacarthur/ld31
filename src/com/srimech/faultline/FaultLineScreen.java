@@ -8,6 +8,9 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.DragEvent;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -43,13 +46,15 @@ class GameThread extends Thread
     }
 }
 
-public class FaultLineScreen extends SurfaceView
+public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 {
     private double d = 0;
     private int animatingRow = -1;
     private int animatingColumn = -1;
     private int animationProgress = -1;
     private GameThread loop;
+    private float dragStartX = 0;
+    private float dragStartY = 0;
     Bitmap wallBitmap;
 
     private void setup() {
@@ -59,15 +64,10 @@ public class FaultLineScreen extends SurfaceView
 	Canvas bitmapCanvas = new Canvas(wallBitmap);
 	wall.setBounds(0, 0, 64, 64);
 	wall.draw(bitmapCanvas);
-
+	setOnTouchListener(this);
         loop = new GameThread(this);
         loop.start();
 
-	// To test animation
-	animatingRow = 2;
-	animationProgress = 0;
-	loop.interrupt();
-	loop.setDelay(100);
     }
     
     public FaultLineScreen(Context context) {
@@ -89,8 +89,46 @@ public class FaultLineScreen extends SurfaceView
 	if(animationProgress >= 0) animationProgress += 1;
 	if(animationProgress == 64) { 
 	    animationProgress = -1;
+	    animatingRow = -1;
+	    animatingColumn = -1;
 	    loop.setDelay(1000);
 	}
+    }
+
+    public boolean onTouch(View v, MotionEvent me) {
+	if(me.getAction() == MotionEvent.ACTION_DOWN) {
+	    dragStartX = me.getX(0);
+	    dragStartY = me.getY(0);
+	}
+	else if(me.getAction() == MotionEvent.ACTION_MOVE) {
+	    float dx = me.getX(0) - dragStartX;
+	    float dy = me.getY(0) - dragStartY;
+	    if(dx > 64 && Math.abs(dy)<32) {
+		startSlideRight((int) (dragStartY / 64));
+		return true;
+	    }
+	    if(dy > 64 && Math.abs(dx)<32) {
+		startSlideDown((int) (dragStartX / 64));
+		return true;
+	    }
+	}
+	return true;
+    }
+
+    public void startSlideRight(int row)
+    {
+	animatingRow = row;
+	animationProgress = 0;
+	loop.setDelay(50);
+	loop.interrupt();	
+    }
+
+    public void startSlideDown(int column)
+    {
+	animatingColumn = column;
+	animationProgress = 0;
+	loop.setDelay(50);
+	loop.interrupt();	
     }
 
     public void onDraw(Canvas canvas) {
