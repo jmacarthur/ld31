@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -76,6 +77,9 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private int playerX = 0;
     private int playerY = 0;
     private int temp_astar_map[][] = null;
+
+    private Path arrowPath;
+
     Bitmap wallBitmaps[];
 
     private Bitmap loadImage(int index)
@@ -108,7 +112,6 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	wallBitmaps[14] = loadImage(R.drawable.brickwall_nse);
 	wallBitmaps[15] = loadImage(R.drawable.brickwall_nsew);
 
-
 	setOnTouchListener(this);
 	cellContents = new int[GSX][GSY];
 	wallType = new int[GSX][GSY];
@@ -124,6 +127,12 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	cellContents[0][0] = PLAYER;
         loop = new GameThread(this);
         loop.start();
+
+	arrowPath = new Path();
+	arrowPath.moveTo(0,0);
+	arrowPath.lineTo(32,32);
+	arrowPath.lineTo(64,0);
+	arrowPath.close();
     }
     
     public FaultLineScreen(Context context) {
@@ -323,9 +332,6 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    for(int gy=0; gy<GSY; gy++) {
 		if(animatingRow == gy) continue;
 		drawTile(canvas, gx, gy, gx*64, gy*64);
-		if(temp_astar_map != null && temp_astar_map[gx][gy] > 0) {
-		    canvas.drawCircle(gx*64+32, gy*64+32, 8, lightBluePaint);
-		}
 	    }
 
 	}
@@ -373,7 +379,13 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	if(contents > 0) {
 	    Paint redPaint = new Paint();
 	    redPaint.setColor(0xffff0000);
-	    canvas.drawCircle(xpos+32, ypos+32, 16, redPaint);
+	    if (mode == MOVE) {
+		Path offsetArrow = new Path();
+		offsetArrow.addPath(arrowPath, xpos, ypos);
+		canvas.drawPath(offsetArrow, redPaint);
+	    } else {
+		canvas.drawCircle(xpos+32, ypos+32, 16, redPaint);
+	    }
 	}
     }
 
