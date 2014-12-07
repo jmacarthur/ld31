@@ -29,6 +29,15 @@ public class AStar
 	distance = new int [gsx][gsy];
     }
     private int gsx,gsy;
+
+    public void reset()
+    {
+	for(int x=0;x<gsx;x++) {
+	    for(int y=0;y<gsy;y++) {
+		distance[x][y] = 0;
+	    }
+	}
+    }
     private void floodFill(int x, int y, int dist) {
 	if (distance[x][y] != 0 && distance[x][y] < dist) return;
 	Log.i("AStar", "Dist "+dist+" Flood filling: "+x+","+y+" wall type "+wallType[x][y]);

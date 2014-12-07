@@ -118,6 +118,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private Paint lightBluePaint = new Paint();
     private Paint redPaint = new Paint();
 
+    private AStar astarSystem;
+
     private int mode = SLIDE;    
     private Entity[] entities;
     private TextView status;
@@ -158,6 +160,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	setOnTouchListener(this);
 	cellContents = new int[GSX][GSY];
 	wallType = new int[GSX][GSY];
+	astarSystem = new AStar(GSX,GSY,wallType);
 
 	entities = new Entity[3];
 	entities[0] = new Entity(0,0,PLAYER);
@@ -290,22 +293,44 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
     private void startMonMove()
     {
-	// Can the monster move anywhere?
+	// Can the monster move to the player?
 	if (canMove(entities[1].x, entities[1].y, entities[0].x, entities[0].y)) {
 	    Log.i("FaultLine", "Moving meanie to player (fight!)");
 	    moveEntity(entities[1], entities[0].x, entities[0].y);
-	    loop.interrupt();
 	}
 	else {
+	    // OK, can we move anywhere nearer?
+	    int leastDist = 100;
+	    int tx = -1;
+	    int ty = -1;
+	    for(int x=0;x<GSX;x++) {
+		for(int y=0;y<GSY;y++) {
+		    if(astarSystem.distance[x][y] > 0) {
+			int dist = Math.abs(x-entities[0].x)+Math.abs(y-entities[0].y);
+			if(dist < leastDist) {
+			    tx = x;
+			    ty = y;
+			    leastDist = dist;
+			}
+		    }
+		}
+		// Yes, I know I can move there (so calling canMove is irrelevant) but this
+		// also sets the route destination, which we'll need.
+		if(tx>-1 && canMove(entities[1].x, entities[1].y, tx, ty)) {
+		    route = astarSystem.getRoute();
+		    moveEntity(entities[1], tx, ty);
+		}
+	    }
 	    Log.i("FaultLine", "Meanie can't move to player");
 	}
 	startAnimation(ROUTE_MONSTER);
+	loop.interrupt();
     }
 
     private boolean canMove(int fromX, int fromY, int toX, int toY) {
-	AStar a = new AStar(GSX,GSY,wallType);
-	boolean result = a.routeable(fromX, fromY, toX, toY);
-	if(result) route = a.getRoute();
+	astarSystem.reset();
+	boolean result = astarSystem.routeable(fromX, fromY, toX, toY);
+	if(result) route = astarSystem.getRoute();
 	return result;
     }
 
