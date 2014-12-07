@@ -89,6 +89,9 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private final int MOVE = 1;
     private final int MONMOVE = 2;
     private final int LAST_CYCLE = MONMOVE;
+    private Paint darkGreyPaint = new Paint();
+    private Paint lightBluePaint = new Paint();
+    private Paint redPaint = new Paint();
 
     private int mode = SLIDE;    
     private Entity[] entities;
@@ -161,6 +164,9 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    arrowPath.close();
 	    arrowPath.transform(rotateMatrix);
 	}
+        darkGreyPaint.setColor(0xff101010);
+	lightBluePaint.setColor(0xff7f7fff);
+	redPaint.setColor(0xffff0000);
     }
     
     public FaultLineScreen(Context context) {
@@ -363,8 +369,6 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	canvas.drawRect(0,0,width,height,p);
 	double x = 128 * Math.cos(d);
 	double y = 128 * Math.sin(d);
-	Paint lightBluePaint = new Paint();
-	lightBluePaint.setColor(0xff7f7fff);
 	canvas.drawCircle((float)(width/2+x), (float)(height/2+y), 16, lightBluePaint);
 
 	for(int gx=0; gx<GSX; gx++) {
@@ -387,6 +391,14 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 		drawTile(canvas, (gx+GSX)%GSX, animatingRow, gx*64+animationProgress*dir,animatingRow*64);
 	    }
 	}
+
+	// Draw 'grid'
+	for(int gx=0; gx<=GSX; gx++) {
+	    for(int gy=0; gy<=GSY; gy++) {
+		canvas.drawCircle(gx*64, gy*64, 4, darkGreyPaint);
+	    }
+	}
+
     }
 
     private int getCellContents(int gx, int gy)
@@ -405,8 +417,6 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	return wallType[gx][gy];
     }
     private void drawPlayer(Canvas canvas, int xpos, int ypos) {
-	Paint redPaint = new Paint();
-	redPaint.setColor(0xffff0000);
 	if (mode == MOVE) {
 	    Path offsetArrow = new Path();
 	    offsetArrow.addPath(arrowPath, xpos+32, ypos+32);
