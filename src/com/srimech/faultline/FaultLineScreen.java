@@ -167,59 +167,46 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	}
     }
 
-    void rotateCellContentsRight(int row) {
-	int temp = getCellContents(GSX-1, row);
-	int tempWall = getWallType(GSX-1, row);
-	int start = GSX-1;
-	int stop = 0;
-	int dir = -1;
+    void rotateHorizontal(int row, int start, int stop, int dir)
+    {
+	int temp = getCellContents(start, row);
+	int tempWall = getWallType(start, row);
 	for(int x=start;x!=stop;x+=dir) {
 	    cellContents[x][row] = cellContents[x+dir][row];
 	    wallType[x][row] = wallType[x+dir][row];
 	}
 	cellContents[stop][row] = temp;
 	wallType[stop][row] = tempWall;
-	if(playerY == row) playerX = (playerX+1)%GSX;
-	if(meanieY == row) meanieX = (meanieX+1)%GSX;
+	if(playerY == row) playerX = (playerX+GSX-dir)%GSX;
+	if(meanieY == row) meanieX = (meanieX+GSX-dir)%GSX;
+    }
+
+    void rotateCellContentsRight(int row) {
+	rotateHorizontal(row, GSX-1, 0, -1);
     }
     void rotateCellContentsLeft(int row) {
-	int temp = getCellContents(0, row);
-	int tempWall = getWallType(0, row);
-	int start = 0;
-	int stop = GSX-1;
-	int dir = 1;
-	for(int x=0;x!=stop;x++) {
-	    cellContents[x][row] = cellContents[x+dir][row];
-	    wallType[x][row] = wallType[x+dir][row];
-	}
-	cellContents[stop][row] = temp;
-	wallType[stop][row] = tempWall;
-	if(playerY == row) playerX = (playerX+GSX-1)%GSX;
-	if(meanieY == row) meanieX = (meanieX+GSX-1)%GSX;
+	rotateHorizontal(row, 0, GSX-1, 1);
     }   
-    void rotateCellContentsDown(int column) {
-	int temp = getCellContents(column, GSY-1);
-	int tempWall = getWallType(column, GSY-1);
-	for(int y=GSY-1;y>0;y--) {
-	    cellContents[column][y] = cellContents[column][y-1];
-	    wallType[column][y] = wallType[column][y-1];
+
+    void rotateVertical(int column, int start, int stop, int dir) {
+	int temp = getCellContents(column, start);
+	int tempWall = getWallType(column, start);
+	for(int y=start;y!=stop;y+=dir) {
+	    cellContents[column][y] = cellContents[column][y+dir];
+	    wallType[column][y] = wallType[column][y+dir];
 	}
-	cellContents[column][0] = temp;
-	wallType[column][0] = tempWall;
-	if(playerX == column) playerY = (playerY+1)%GSY;
-	if(meanieX == column) meanieY = (meanieY+1)%GSY;
+	cellContents[column][stop] = temp;
+	wallType[column][stop] = tempWall;
+	if(playerX == column) playerY = (playerY+GSY-dir)%GSY;
+	if(meanieX == column) meanieY = (meanieY+GSY-dir)%GSY;
     }
+
+    void rotateCellContentsDown(int column) {
+	rotateVertical(column, GSY-1, 0, -1);
+    }
+
     void rotateCellContentsUp(int column) {
-	int temp = getCellContents(column, 0);
-	int tempWall = getWallType(column, 0);
-	for(int y=0;y<GSY-1;y++) {
-	    cellContents[column][y] = cellContents[column][y+1];
-	    wallType[column][y] = wallType[column][y+1];
-	}
-	cellContents[column][GSY-1] = temp;
-	wallType[column][GSY-1] = tempWall;
-	if(playerX == column) playerY = (playerY+GSY-1)%GSY;
-	if(meanieX == column) meanieY = (meanieY+GSY-1)%GSY;
+	rotateVertical(column, 0, GSY-1, 1);
     }
 
     void finishAnimation() {
