@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
@@ -100,22 +101,16 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
     private void setup() {
 	wallBitmaps = new Bitmap[16]; // NSEW
-	wallBitmaps[0] = loadImage(R.drawable.brickwall);
-	wallBitmaps[1] = loadImage(R.drawable.brickwall_w);
-	wallBitmaps[2] = loadImage(R.drawable.brickwall_e);
-	wallBitmaps[3] = loadImage(R.drawable.brickwall_ew);
-	wallBitmaps[4] = loadImage(R.drawable.brickwall_s);
-	wallBitmaps[5] = loadImage(R.drawable.brickwall_sw);
-	wallBitmaps[6] = loadImage(R.drawable.brickwall_se);
-	wallBitmaps[7] = loadImage(R.drawable.brickwall_sew);
-	wallBitmaps[8] = loadImage(R.drawable.brickwall_n);
-	wallBitmaps[9] = loadImage(R.drawable.brickwall_nw);
-	wallBitmaps[10] = loadImage(R.drawable.brickwall_ne);
-	wallBitmaps[11] = loadImage(R.drawable.brickwall_new);
-	wallBitmaps[12] = loadImage(R.drawable.brickwall_ns);
-	wallBitmaps[13] = loadImage(R.drawable.brickwall_nsw);
-	wallBitmaps[14] = loadImage(R.drawable.brickwall_nse);
-	wallBitmaps[15] = loadImage(R.drawable.brickwall_nsew);
+	int[] tileList = { R.drawable.brickwall, R.drawable.brickwall_w,
+			   R.drawable.brickwall_e, R.drawable.brickwall_ew,
+			   R.drawable.brickwall_s, R.drawable.brickwall_sw,
+			   R.drawable.brickwall_se, R.drawable.brickwall_sew,
+			   R.drawable.brickwall_n, R.drawable.brickwall_nw,
+			   R.drawable.brickwall_ne, R.drawable.brickwall_new,
+			   R.drawable.brickwall_ns, R.drawable.brickwall_nsw,
+			   R.drawable.brickwall_nse, R.drawable.brickwall_nsew };
+	for(int i=0;i<16;i++) { wallBitmaps[i] = loadImage(tileList[i]); }
+
 	Resources r = this.getContext().getResources();
 	status = (TextView) findViewById(R.id.textView);
 	meanieBitmap = loadImage(R.drawable.meanie);
@@ -136,28 +131,17 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
         loop = new GameThread(this);
         loop.start();
 
+
+	Matrix rotateMatrix = new Matrix();
+	rotateMatrix.setRotate((float)90.0);
 	arrowPath = new Path();
-	arrowPath.moveTo(16,-16);
-	arrowPath.lineTo(32,0);
-	arrowPath.lineTo(16,16);
-	arrowPath.lineTo(16,-16);
-
-	arrowPath.moveTo(16,16);
-	arrowPath.lineTo(0,32);
-	arrowPath.lineTo(-16,16);
-	arrowPath.lineTo(16,16);
-
-	arrowPath.moveTo(-16,16);
-	arrowPath.lineTo(-32,0);
-	arrowPath.lineTo(-16,-16);
-	arrowPath.lineTo(-16,16);
-
-	arrowPath.moveTo(-16,-16);
-	arrowPath.lineTo(0,-32);
-	arrowPath.lineTo(16,-16);
-	arrowPath.lineTo(-16,-16);
-
-	arrowPath.close();
+	for(int d=0;d<4;d++) {
+	    arrowPath.moveTo(16,16);
+	    arrowPath.lineTo(0,32);
+	    arrowPath.lineTo(-16,16);
+	    arrowPath.close();
+	    arrowPath.transform(rotateMatrix);
+	}
     }
     
     public FaultLineScreen(Context context) {
