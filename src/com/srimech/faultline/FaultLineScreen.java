@@ -133,8 +133,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
 	entities = new Entity[3];
 	entities[0] = new Entity(0,0,PLAYER);
-	entities[1] = new Entity(4,6,MEANIE);
-	entities[2] = new Entity(0,6,SWORD);
+	entities[1] = new Entity(GSX-1,GSY-1,MEANIE);
+	entities[2] = new Entity(0,GSY-1,SWORD);
 
 	Random rn = new Random();
 
@@ -146,6 +146,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	}
 	cellContents[0][0] = PLAYER;
 	cellContents[GSX-1][GSY-1] = MEANIE;
+	cellContents[0][GSY-1] = SWORD;
+
         loop = new GameThread(this);
         loop.start();
 
