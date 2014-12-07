@@ -296,6 +296,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	// Can the monster move to the player?
 	if (canMove(entities[1].x, entities[1].y, entities[0].x, entities[0].y)) {
 	    Log.i("FaultLine", "Moving meanie to player (fight!)");
+	    route = astarSystem.getRoute();
 	    moveEntity(entities[1], entities[0].x, entities[0].y);
 	}
 	else {
@@ -316,12 +317,14 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 		}
 		// Yes, I know I can move there (so calling canMove is irrelevant) but this
 		// also sets the route destination, which we'll need.
-		if(tx>-1 && canMove(entities[1].x, entities[1].y, tx, ty)) {
-		    route = astarSystem.getRoute();
-		    moveEntity(entities[1], tx, ty);
-		}
 	    }
-	    Log.i("FaultLine", "Meanie can't move to player");
+	    if(tx>-1 && canMove(entities[1].x, entities[1].y, tx, ty)) {
+		route = astarSystem.getRoute();
+		moveEntity(entities[1], tx, ty);
+	    } else {
+		Log.i("FaultLine", "Meanie can't move to player");
+	    }
+
 	}
 	startAnimation(ROUTE_MONSTER);
 	loop.interrupt();
