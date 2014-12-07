@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -17,6 +18,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
+import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Random;
 
 class GameThread extends Thread
@@ -54,11 +57,31 @@ class Entity
 {
     public int x = 0;
     public int y = 0;
+    public int oldx;
+    public int oldy;
     public int type = 0;
     Entity(int x, int y, int type) {
 	this.x = x;
 	this.y = y;
+	oldx = x; oldy = y;
 	this.type = type;
+    }
+    void move(int newx, int newy)
+    {
+	oldx = x;
+	oldy = y;
+	x = newx;
+	y = newy;
+    }
+    /* setX/setY should be used when an entity is moved by dungeon rotation, rather than 
+       moving itself */
+    void setX(int newx) {
+	oldx = newx;
+	x = newx;
+    }
+    void setY(int newy) {
+	oldy = newy;
+	y = newy;
     }
 }
 
@@ -84,6 +107,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private final int SLIDE_DOWN = 2;
     private final int SLIDE_LEFT = 3;
     private final int SLIDE_UP = 4;
+    private final int ROUTE_PLAYER = 5;
+    private final int ROUTE_MONSTER = 6;
 
     private final int SLIDE = 0;
     private final int MOVE = 1;
@@ -95,9 +120,9 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
     private int mode = SLIDE;    
     private Entity[] entities;
-    private int temp_astar_map[][] = null;
     private TextView status;
     private Path arrowPath;
+    private LinkedList<Point> route;
 
     Bitmap wallBitmaps[];
     Bitmap meanieBitmap;
@@ -202,7 +227,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	cellContents[stop][row] = temp;
 	wallType[stop][row] = tempWall;
 	for(int i=0;i<entities.length;i++)
-	    if(entities[i].y == row) entities[i].x = (entities[i].x+GSX-dir)%GSX;
+	    if(entities[i].y == row) entities[i].setX((entities[i].x+GSX-dir)%GSX);
     }
 
     void rotateCellContentsRight(int row) {
@@ -222,7 +247,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	cellContents[column][stop] = temp;
 	wallType[column][stop] = tempWall;
 	for(int i=0;i<entities.length;i++)
-	    if(entities[i].x == column) entities[i].y = (entities[i].y+GSY-dir)%GSY;
+	    if(entities[i].x == column) entities[i].setY((entities[i].y+GSY-dir)%GSY);
     }
 
     void rotateCellContentsDown(int column) {
@@ -250,21 +275,21 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	animatingColumn = -1;
 	loop.setDelay(1000);
 	animationType = 0;
-	mode = (mode + 1) % LAST_CYCLE;
+	Log.i("Faultline", "Completed animation; was in mode "+mode);
+	mode = (mode + 1) % (LAST_CYCLE+1);
 	Log.i("Faultline", "Completed animation; moved to mode "+mode);
+	if(mode == 2) 	    startMonMove();
     }
 
     private void moveEntity(Entity e, int x, int y)
     {
 	cellContents[e.x][e.y] = 0;
-	e.x = x;
-	e.y = y;
+	e.move(x,y);
 	cellContents[x][y] = e.type;
     }
 
     private void startMonMove()
     {
-	mode = MONMOVE;
 	// Can the monster move anywhere?
 	if (canMove(entities[1].x, entities[1].y, entities[0].x, entities[0].y)) {
 	    Log.i("FaultLine", "Moving meanie to player (fight!)");
@@ -274,22 +299,22 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	else {
 	    Log.i("FaultLine", "Meanie can't move to player");
 	}
-	mode = SLIDE;
+	startMonMoveAnimation();
     }
 
     private boolean canMove(int fromX, int fromY, int toX, int toY) {
 	AStar a = new AStar(GSX,GSY,wallType);
 	boolean result = a.routeable(fromX, fromY, toX, toY);
-	temp_astar_map = a.distance;
+	if(result) route = a.getRoute();
 	return result;
     }
 
     private void startMove(int x, int y) {
 	if(canMove(entities[0].x, entities[0].y, x, y)) {
+	    startPlayerMoveAnimation();
 	    Log.i("FaultLine", "Move OK from "+entities[0].x+","+entities[0].y+" to "+x+","+y);
 	    moveEntity(entities[0], x, y);
 	    loop.interrupt();
-	    startMonMove();
 	}
 	else {
 	    Log.i("FaultLine", "Move denied from "+entities[0].x+","+entities[0].y+" to "+x+","+y);
@@ -345,7 +370,23 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	animationProgress = 0;
 	animationType = type;
 	loop.setDelay(10);
-	loop.interrupt();	
+	loop.interrupt();
+    }
+
+    public void startPlayerMoveAnimation()
+    {
+	animationType = ROUTE_PLAYER;
+	animationProgress = 0;
+	loop.setDelay(10);
+	loop.interrupt();
+    }
+
+    public void startMonMoveAnimation()
+    {
+	animationType = ROUTE_MONSTER;
+	animationProgress = 0;
+	loop.setDelay(10);
+	loop.interrupt();
     }
 
     public void onDraw(Canvas canvas) {
@@ -390,6 +431,30 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 		int dir = animationType == SLIDE_RIGHT?1:-1;
 		drawTile(canvas, (gx+GSX)%GSX, animatingRow, gx*64+animationProgress*dir,animatingRow*64);
 	    }
+	}
+	if(animationType == ROUTE_PLAYER) {
+	    if(route != null) {
+		ListIterator<Point> listIterator = route.listIterator();
+		while (listIterator.hasNext()) {
+		    Point pr = listIterator.next();
+		    canvas.drawCircle(pr.x*64+32, pr.y*64+32, 8, lightBluePaint);
+		}
+	    }
+	    int xpos = (entities[0].oldx * (64-animationProgress) + entities[0].x * (animationProgress));
+	    int ypos = (entities[0].oldy * (64-animationProgress) + entities[0].y * (animationProgress));
+	    drawPlayer(canvas, xpos, ypos);
+	}
+	if(animationType == ROUTE_MONSTER) {
+	    if(route != null) {
+		ListIterator<Point> listIterator = route.listIterator();
+		while (listIterator.hasNext()) {
+		    Point pr = listIterator.next();
+		    canvas.drawCircle(pr.x*64+32, pr.y*64+32, 8, lightBluePaint);
+		}
+	    }
+	    int xpos = (entities[1].oldx * (64-animationProgress) + entities[1].x * (animationProgress));
+	    int ypos = (entities[1].oldy * (64-animationProgress) + entities[1].y * (animationProgress));
+	    drawMeanie(canvas, xpos, ypos);
 	}
 
 	// Draw 'grid'
@@ -443,10 +508,10 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	canvas.drawBitmap(wallBitmaps[t], null, new RectF(xpos,ypos,xpos+64,ypos+64), null);
 	int contents = getCellContents(gx,gy);
 	if(contents > 0) {
-	    if(contents == PLAYER) {
+	    if(contents == PLAYER && animationType != ROUTE_PLAYER) {
 		drawPlayer(canvas, xpos, ypos);
 	    }
-	    else if(contents == MEANIE) {
+	    else if(contents == MEANIE && animationType != ROUTE_MONSTER) {
 		drawMeanie(canvas, xpos, ypos);
 	    }
 	    else if(contents == SWORD) {
