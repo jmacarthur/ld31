@@ -299,7 +299,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	else {
 	    Log.i("FaultLine", "Meanie can't move to player");
 	}
-	startMonMoveAnimation();
+	startAnimation(ROUTE_MONSTER);
     }
 
     private boolean canMove(int fromX, int fromY, int toX, int toY) {
@@ -311,7 +311,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
     private void startMove(int x, int y) {
 	if(canMove(entities[0].x, entities[0].y, x, y)) {
-	    startPlayerMoveAnimation();
+	    startAnimation(ROUTE_PLAYER);
 	    Log.i("FaultLine", "Move OK from "+entities[0].x+","+entities[0].y+" to "+x+","+y);
 	    moveEntity(entities[0], x, y);
 	    loop.interrupt();
@@ -355,38 +355,24 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	return true;
     }
 
-    public void startSlideRow(int row, int type)
+    public void startAnimation(int type)
     {
-	animatingRow = row;
 	animationProgress = 0;
 	animationType = type;
 	loop.setDelay(10);
 	loop.interrupt();
+    }
+
+    public void startSlideRow(int row, int type)
+    {
+	animatingRow = row;
+	startAnimation(type);
     }
 
     public void startSlideCol(int column, int type)
     {
 	animatingColumn = column;
-	animationProgress = 0;
-	animationType = type;
-	loop.setDelay(10);
-	loop.interrupt();
-    }
-
-    public void startPlayerMoveAnimation()
-    {
-	animationType = ROUTE_PLAYER;
-	animationProgress = 0;
-	loop.setDelay(10);
-	loop.interrupt();
-    }
-
-    public void startMonMoveAnimation()
-    {
-	animationType = ROUTE_MONSTER;
-	animationProgress = 0;
-	loop.setDelay(10);
-	loop.interrupt();
+	startAnimation(type);
     }
 
     public void onDraw(Canvas canvas) {
