@@ -50,6 +50,18 @@ class GameThread extends Thread
     }
 }
 
+class Entity
+{
+    public int x = 0;
+    public int y = 0;
+    public int type = 0;
+    Entity(int x, int y, int type) {
+	this.x = x;
+	this.y = y;
+	this.type = type;
+    }
+}
+
 public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 {
     private double d = 0;
@@ -64,7 +76,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private int wallType[][];
     private final int PLAYER = 1;
     private final int MEANIE = 2;
-
+    private final int SWORD = 3;
     private final int GSX = 5;
     private final int GSY = 7;
 
@@ -79,16 +91,14 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private final int LAST_CYCLE = MONMOVE;
 
     private int mode = SLIDE;    
-    private int playerX = 0;
-    private int playerY = 0;
-    private int meanieX = GSX-1;
-    private int meanieY = GSY-1;
+    private Entity[] entities;
     private int temp_astar_map[][] = null;
     private TextView status;
     private Path arrowPath;
 
     Bitmap wallBitmaps[];
     Bitmap meanieBitmap;
+    Bitmap swordBitmap;
 
     private Bitmap loadImage(int index)
     {
@@ -116,9 +126,15 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	Resources r = this.getContext().getResources();
 	status = (TextView) findViewById(R.id.textView);
 	meanieBitmap = loadImage(R.drawable.meanie);
+	swordBitmap = loadImage(R.drawable.sword);
 	setOnTouchListener(this);
 	cellContents = new int[GSX][GSY];
 	wallType = new int[GSX][GSY];
+
+	entities = new Entity[3];
+	entities[0] = new Entity(0,0,PLAYER);
+	entities[1] = new Entity(4,6,MEANIE);
+	entities[2] = new Entity(0,6,SWORD);
 
 	Random rn = new Random();
 
@@ -177,8 +193,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	}
 	cellContents[stop][row] = temp;
 	wallType[stop][row] = tempWall;
-	if(playerY == row) playerX = (playerX+GSX-dir)%GSX;
-	if(meanieY == row) meanieX = (meanieX+GSX-dir)%GSX;
+	for(int i=0;i<entities.length;i++)
+	    if(entities[i].y == row) entities[i].x = (entities[i].x+GSX-dir)%GSX;
     }
 
     void rotateCellContentsRight(int row) {
@@ -197,8 +213,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	}
 	cellContents[column][stop] = temp;
 	wallType[column][stop] = tempWall;
-	if(playerX == column) playerY = (playerY+GSY-dir)%GSY;
-	if(meanieX == column) meanieY = (meanieY+GSY-dir)%GSY;
+	for(int i=0;i<entities.length;i++)
+	    if(entities[i].x == column) entities[i].y = (entities[i].y+GSY-dir)%GSY;
     }
 
     void rotateCellContentsDown(int column) {
@@ -230,16 +246,22 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	Log.i("Faultline", "Completed animation; moved to mode "+mode);
     }
 
+    private void moveEntity(Entity e, int x, int y)
+    {
+	cellContents[e.x][e.y] = 0;
+	e.x = x;
+	e.y = y;
+	cellContents[x][y] = e.type;
+    }
+
     private void startMonMove()
     {
 	mode = MONMOVE;
 	// Can the monster move anywhere?
-	if (canMove(meanieX, meanieY, playerX, playerY)) {
+	if (canMove(entities[1].x, entities[1].y, entities[0].x, entities[0].y)) {
 	    Log.i("FaultLine", "Moving meanie to player (fight!)");
-	    cellContents[meanieX][meanieY] = 0;
-	    meanieX = playerX;
-	    meanieY = playerY;
-	    cellContents[meanieX][meanieY] = MEANIE;
+	    moveEntity(entities[1], entities[0].x, entities[0].y);
+	    loop.interrupt();
 	}
 	else {
 	    Log.i("FaultLine", "Meanie can't move to player");
@@ -255,17 +277,14 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     }
 
     private void startMove(int x, int y) {
-	if(canMove(playerX, playerY, x, y)) {
-	    Log.i("FaultLine", "Move OK from "+playerX+","+playerY+" to "+x+","+y);
-	    cellContents[playerX][playerY] = 0;
-	    playerX = x;
-	    playerY = y;
-	    cellContents[playerX][playerY] = PLAYER;	    
+	if(canMove(entities[0].x, entities[0].y, x, y)) {
+	    Log.i("FaultLine", "Move OK from "+entities[0].x+","+entities[0].y+" to "+x+","+y);
+	    moveEntity(entities[0], x, y);
 	    loop.interrupt();
 	    startMonMove();
 	}
 	else {
-	    Log.i("FaultLine", "Move denied from "+playerX+","+playerY+" to "+x+","+y);
+	    Log.i("FaultLine", "Move denied from "+entities[0].x+","+entities[0].y+" to "+x+","+y);
 	}
     }
 
@@ -289,19 +308,15 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    float dy = me.getY(0) - dragStartY;
 	    if(dx > 64 && Math.abs(dy)<32) {
 		startSlideRow((int) (dragStartY / 64), SLIDE_RIGHT);
-		return true;
 	    }
 	    if(dx < -64 && Math.abs(dy)<32) {
 		startSlideRow((int) (dragStartY / 64), SLIDE_LEFT);
-		return true;
 	    }
 	    else if(dy > 64 && Math.abs(dx)<32) {
 		startSlideCol((int) (dragStartX / 64), SLIDE_DOWN);
-		return true;
 	    }
 	    else if(dy < -64 && Math.abs(dx)<32) {
 		startSlideCol((int) (dragStartX / 64), SLIDE_UP);
-		return true;
 	    }
 	}
 	return true;
@@ -356,7 +371,6 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 		if(animatingRow == gy) continue;
 		drawTile(canvas, gx, gy, gx*64, gy*64);
 	    }
-
 	}
 
 	if(animatingColumn >= 0) {
@@ -402,6 +416,9 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private void drawMeanie(Canvas canvas, int xpos, int ypos) {
 	canvas.drawBitmap(meanieBitmap, null, new RectF(xpos,ypos,xpos+64,ypos+64), null);
     }
+    private void drawSword(Canvas canvas, int xpos, int ypos) {
+	canvas.drawBitmap(swordBitmap, null, new RectF(xpos,ypos,xpos+64,ypos+64), null);
+    }
 
     private void drawTile(Canvas canvas, int gx, int gy, int xpos, int ypos)
     {
@@ -419,6 +436,9 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 	    }
 	    else if(contents == MEANIE) {
 		drawMeanie(canvas, xpos, ypos);
+	    }
+	    else if(contents == SWORD) {
+		drawSword(canvas, xpos, ypos);
 	    }
 	}
     }
