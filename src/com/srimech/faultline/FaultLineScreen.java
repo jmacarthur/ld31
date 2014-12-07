@@ -117,7 +117,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
     private Paint darkGreyPaint = new Paint();
     private Paint lightBluePaint = new Paint();
     private Paint redPaint = new Paint();
-
+    private final int ANIMATIONLEN = 64;
     private AStar astarSystem;
 
     private int mode = SLIDE;    
@@ -213,8 +213,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
     void updateGameLoop() {
 	d += 0.1;
-	if(animationProgress >= 0) animationProgress += 2;
-	if(animationProgress == 64) { 
+	if(animationProgress >= 0) animationProgress += 4;
+	if(animationProgress >= ANIMATIONLEN) {
 	    finishAnimation();
 	}
     }
@@ -293,6 +293,7 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 
     private void startMonMove()
     {
+	startAnimation(ROUTE_MONSTER); // Always start this even if we can't move; it updates the state machine
 	// Can the monster move to the player?
 	if (canMove(entities[1].x, entities[1].y, entities[0].x, entities[0].y)) {
 	    Log.i("FaultLine", "Moving meanie to player (fight!)");
@@ -323,10 +324,10 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 		moveEntity(entities[1], tx, ty);
 	    } else {
 		Log.i("FaultLine", "Meanie can't move to player");
+		animationProgress = 64;
 	    }
 
 	}
-	startAnimation(ROUTE_MONSTER);
 	loop.interrupt();
     }
 
@@ -454,8 +455,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 		    canvas.drawCircle(pr.x*64+32, pr.y*64+32, 8, lightBluePaint);
 		}
 	    }
-	    int xpos = (entities[0].oldx * (64-animationProgress) + entities[0].x * (animationProgress));
-	    int ypos = (entities[0].oldy * (64-animationProgress) + entities[0].y * (animationProgress));
+	    int xpos = (entities[0].oldx * (ANIMATIONLEN-animationProgress) + entities[0].x * (animationProgress));
+	    int ypos = (entities[0].oldy * (ANIMATIONLEN-animationProgress) + entities[0].y * (animationProgress));
 	    drawPlayer(canvas, xpos, ypos);
 	}
 	if(animationType == ROUTE_MONSTER) {
@@ -466,8 +467,8 @@ public class FaultLineScreen extends SurfaceView implements View.OnTouchListener
 		    canvas.drawCircle(pr.x*64+32, pr.y*64+32, 8, lightBluePaint);
 		}
 	    }
-	    int xpos = (entities[1].oldx * (64-animationProgress) + entities[1].x * (animationProgress));
-	    int ypos = (entities[1].oldy * (64-animationProgress) + entities[1].y * (animationProgress));
+	    int xpos = (entities[1].oldx * (ANIMATIONLEN-animationProgress) + entities[1].x * (animationProgress));
+	    int ypos = (entities[1].oldy * (ANIMATIONLEN-animationProgress) + entities[1].y * (animationProgress));
 	    drawMeanie(canvas, xpos, ypos);
 	}
 
